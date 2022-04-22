@@ -21,18 +21,15 @@ sealed abstract class GlobalParameter[T] {
 }
 
 case class OxygenTrack private(current: Int) extends GlobalParameter[OxygenTrack] {
-  override def advance(): IO[ActionError, (OxygenTrack, Seq[ActionBonus])] = {
-    if (current == OxygenTrack.Steps.last) {
-      IO.fail(ActionError.OceansMaxed)
-    } else {
-      (current + OxygenTrack.Steps.step) match {
-        case no @ OxygenTrack.TemperatureSynergy =>
-          IO.succeed(copy(current = no), Seq(ActionBonus.TRBump, ActionBonus.BonusTemperature))
-        case nt =>
-          IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump))
-      }
+  override def advance(): IO[ActionError, (OxygenTrack, Seq[ActionBonus])] =
+    (current + OxygenTrack.Steps.step) match {
+      case no if no > OxygenTrack.Steps.last =>
+        IO.fail(ActionError.OceansMaxed)
+      case no @ OxygenTrack.TemperatureSynergy =>
+        IO.succeed(copy(current = no), Seq(ActionBonus.TRBump, ActionBonus.BonusTemperature))
+      case no =>
+        IO.succeed(copy(current = no), Seq(ActionBonus.TRBump))
     }
-  }
 }
 object OxygenTrack {
   private val Steps: Range = 0 to 13 by 1
@@ -41,20 +38,17 @@ object OxygenTrack {
 }
 
 case class TemperatureTrack private(current: Int) extends GlobalParameter[TemperatureTrack] {
-  override def advance(): IO[ActionError, (TemperatureTrack, Seq[ActionBonus])] = {
-    if (current == TemperatureTrack.Steps.last) {
-      IO.fail(ActionError.TemperatureMaxed)
-    } else {
-      (current + TemperatureTrack.Steps.step) match {
-        case nt @ TemperatureTrack.OceanSynergy =>
-          IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump, ActionBonus.BonusOcean))
-        case nt if TemperatureTrack.HeatProductionSynergy(nt) =>
-          IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump, ActionBonus.BonusHeatProduction))
-        case nt =>
-          IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump))
-      }
+  override def advance(): IO[ActionError, (TemperatureTrack, Seq[ActionBonus])] =
+    (current + TemperatureTrack.Steps.step) match {
+      case nt if nt > TemperatureTrack.Steps.last =>
+        IO.fail(ActionError.TemperatureMaxed)
+      case nt @ TemperatureTrack.OceanSynergy =>
+        IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump, ActionBonus.BonusOcean))
+      case nt if TemperatureTrack.HeatProductionSynergy(nt) =>
+        IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump, ActionBonus.BonusHeatProduction))
+      case nt =>
+        IO.succeed(copy(current = nt), Seq(ActionBonus.TRBump))
     }
-  }
 }
 object TemperatureTrack {
   private val Steps: Range = -30 to 8 by 2
@@ -65,10 +59,11 @@ object TemperatureTrack {
 
 case class OceanTrack private(current: Int) extends GlobalParameter[OceanTrack] {
   override def advance(): IO[ActionError, (OceanTrack, Seq[ActionBonus])] =
-    if (current == OceanTrack.Steps.last) {
-      IO.fail(ActionError.OceansMaxed)
-    }  else {
-      IO.succeed(copy(current = current + OceanTrack.Steps.step), Seq(ActionBonus.TRBump))
+    (current + OceanTrack.Steps.step) match {
+      case no if no > OceanTrack.Steps.last =>
+        IO.fail(ActionError.OceansMaxed)
+      case no =>
+        IO.succeed(copy(current = no), Seq(ActionBonus.TRBump))
     }
 }
 object OceanTrack {
