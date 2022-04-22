@@ -15,8 +15,13 @@ enum ActionError {
   case OceansMaxed
 }
 
-case class OxygenTrack private(current: Int) {
-  def advance(): IO[ActionError, (OxygenTrack, Seq[ActionBonus])] = {
+sealed abstract class GlobalParameter[T] {
+  def current: Int
+  def advance(): IO[ActionError, (T, Seq[ActionBonus])]
+}
+
+case class OxygenTrack private(current: Int) extends GlobalParameter[OxygenTrack] {
+  override def advance(): IO[ActionError, (OxygenTrack, Seq[ActionBonus])] = {
     if (current == OxygenTrack.Steps.last) {
       IO.fail(ActionError.OceansMaxed)
     } else {
@@ -35,8 +40,8 @@ object OxygenTrack {
   val Start: OxygenTrack = OxygenTrack(Steps.head)
 }
 
-case class TemperatureTrack private(current: Int) {
-  def advance(): IO[ActionError, (TemperatureTrack, Seq[ActionBonus])] = {
+case class TemperatureTrack private(current: Int) extends GlobalParameter[TemperatureTrack] {
+  override def advance(): IO[ActionError, (TemperatureTrack, Seq[ActionBonus])] = {
     if (current == TemperatureTrack.Steps.last) {
       IO.fail(ActionError.TemperatureMaxed)
     } else {
@@ -58,8 +63,8 @@ object TemperatureTrack {
   val Start: TemperatureTrack = TemperatureTrack(Steps.head)
 }
 
-case class OceanTrack private(current: Int) {
-  def advance(): IO[ActionError, (OceanTrack, Seq[ActionBonus])] =
+case class OceanTrack private(current: Int) extends GlobalParameter[OceanTrack] {
+  override def advance(): IO[ActionError, (OceanTrack, Seq[ActionBonus])] =
     if (current == OceanTrack.Steps.last) {
       IO.fail(ActionError.OceansMaxed)
     }  else {
@@ -109,12 +114,11 @@ object Action {
 }
 
 case class Tile(row: Int, column: Int)
-case class Row(tiles: IndexedSeq[Tile])
-case class Board(rows: IndexedSeq[Row])
+case class Board(tiles: Set[Tile])
 
 object Board {
   def apply(): Board = {
-    new Board(IndexedSeq.empty)
+    new Board(Set.empty)
   }
 }
 
