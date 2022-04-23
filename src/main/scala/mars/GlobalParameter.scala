@@ -2,25 +2,12 @@ package mars
 
 import zio.*
 
-enum ActionBonus {
-  case TRBump
-  case BonusOcean
-  case BonusHeatProduction
-  case BonusTemperature
-}
-
-enum ActionError {
-  case OxygenMaxed
-  case TemperatureMaxed
-  case OceansMaxed
-}
-
 sealed abstract class GlobalParameter[T] {
   def current: Int
   def advance(): IO[ActionError, (T, Seq[ActionBonus])]
 }
 
-case class OxygenTrack private(current: Int) extends GlobalParameter[OxygenTrack] {
+final case class OxygenTrack private(current: Int) extends GlobalParameter[OxygenTrack] {
   override def advance(): IO[ActionError, (OxygenTrack, Seq[ActionBonus])] =
     (current + OxygenTrack.Steps.step) match {
       case no if no > OxygenTrack.Steps.last =>
@@ -37,7 +24,7 @@ object OxygenTrack {
   val Start: OxygenTrack = OxygenTrack(Steps.head)
 }
 
-case class TemperatureTrack private(current: Int) extends GlobalParameter[TemperatureTrack] {
+final case class TemperatureTrack private(current: Int) extends GlobalParameter[TemperatureTrack] {
   override def advance(): IO[ActionError, (TemperatureTrack, Seq[ActionBonus])] =
     (current + TemperatureTrack.Steps.step) match {
       case nt if nt > TemperatureTrack.Steps.last =>
@@ -57,7 +44,7 @@ object TemperatureTrack {
   val Start: TemperatureTrack = TemperatureTrack(Steps.head)
 }
 
-case class OceanTrack private(current: Int) extends GlobalParameter[OceanTrack] {
+final case class OceanTrack private(current: Int) extends GlobalParameter[OceanTrack] {
   override def advance(): IO[ActionError, (OceanTrack, Seq[ActionBonus])] =
     (current + OceanTrack.Steps.step) match {
       case no if no > OceanTrack.Steps.last =>
@@ -71,7 +58,7 @@ object OceanTrack {
   val Start: OceanTrack = OceanTrack(Steps.head)
 }
 
-case class GlobalParameters private(
+final case class GlobalParameters private(
   oxygen: OxygenTrack,
   temperature: TemperatureTrack,
   oceans: OceanTrack,
@@ -92,37 +79,10 @@ case class GlobalParameters private(
         }
     }
 }
-
 object GlobalParameters {
   val Start: GlobalParameters = GlobalParameters(
     oxygen = OxygenTrack.Start,
     temperature = TemperatureTrack.Start,
     oceans = OceanTrack.Start,
   )
-}
-
-sealed trait Action
-object Action {
-  case class PlaceOcean(tile: Tile) extends Action
-  case object IncreaseTemperature extends Action
-  case object IncreaseOxygen extends Action
-}
-
-case class Tile(row: Int, column: Int)
-case class Board(tiles: Set[Tile])
-
-object Board {
-  def apply(): Board = {
-    new Board(Set.empty)
-  }
-}
-
-object Main extends App {
-  val gp = GlobalParameters.Start
-  val ac = UIO.succeed(Action.IncreaseTemperature)
-  val x = gp.apply(ac)
-
-  val runtime = Runtime.default
-  val state = runtime.unsafeRun(x)
-  println(state)
 }
