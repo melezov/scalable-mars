@@ -3,7 +3,7 @@ package mars
 import zio.*
 
 enum ActionBonus {
-  case TRBump
+  case IncreaseTerraformingRating
   case BonusOcean
   case BonusHeatProduction
   case BonusTemperature

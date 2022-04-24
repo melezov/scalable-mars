@@ -1,8 +1,5 @@
 package mars
 
-import scala.collection.{SortedMap, SortedSet, mutable}
-import scala.io.Source
-
 final case class Board(tiles: SortedSet[Tile]) {
   val coords: SortedMap[TileCoords, Tile] =
     SortedMap.empty ++ tiles.map(t => t.coords -> t)
@@ -19,7 +16,7 @@ object Board {
   val EquatorRow = 5
 
   val Tharsis: Board = {
-    val map = Source.fromResource("tharsis.txt")
+    val map = io.Source.fromResource("tharsis.txt")
     val tiles = for {
       (line, row) <- map.getLines() zip LazyList.from(1)
       (tile, pos) <- line.drop(math.abs((EquatorRow - row) * 2)).grouped(4) zip LazyList.from(1)

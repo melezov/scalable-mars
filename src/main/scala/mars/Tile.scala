@@ -1,6 +1,5 @@
 package mars
 
-import scala.collection.{SortedMap, SortedSet, mutable}
 import scala.io.Source
 
 enum TileType {
@@ -16,6 +15,11 @@ enum TilePlacementBonus {
   case Titanium
 }
 
-final case class Tile(coords: TileCoords, `type`: TileType, placementBonuses: Seq[TilePlacementBonus]) extends Ordered[Tile] {
+final case class Tile(
+    coords: TileCoords,
+    `type`: TileType,
+    placementBonuses: Seq[TilePlacementBonus],
+  ) extends Ordered[Tile] {
+
   override def compare(that: Tile): Int = coords compare that.coords
 }
