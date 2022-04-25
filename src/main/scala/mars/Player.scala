@@ -32,8 +32,8 @@ case class PlayerMat private(
   heat: Int,
   heatProduction: Int,
 ) {
-  def produce(terraformingRating: Int): PlayerMat = copy(
-    megacredits = megacredits + terraformingRating + megacreditProduction,
+  def produce(terraformRating: Int): PlayerMat = copy(
+    megacredits = megacredits + terraformRating + megacreditProduction,
     steel = steel + steelProduction,
     titanium = titanium + titaniumProduction,
     plants = plants + plantProduction,
@@ -46,14 +46,18 @@ object PlayerMat {
 }
 
 case class Player(
-  terraformingRating: Int,
+  terraformRating: Int,
   mat: PlayerMat,
   tiles: SortedMap[TileCoords, PlayerTile],
+  steelMultiplier: Int,
+  titaniumMultiplier: Int,
 )
 object Player {
   val Start: Player = Player(
-    terraformingRating = 20,
+    terraformRating = 20,
     mat = PlayerMat.Start,
     tiles = SortedMap.empty,
+    steelMultiplier = 2,
+    titaniumMultiplier = 3,
   )
 }

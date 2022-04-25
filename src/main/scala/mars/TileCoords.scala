@@ -1,7 +1,5 @@
 package mars
 
-import scala.io.Source
-
 enum TileAdjacency extends Ordered[TileAdjacency] {
   case NE, NW, E, W, SE, SW
 
@@ -19,7 +17,7 @@ enum TileAdjacency extends Ordered[TileAdjacency] {
 }
 
 final case class TileCoords(row: Int, pos: Int) extends Ordered[TileCoords] {
-  def compare(that: TileCoords): Int =
+  override def compare(that: TileCoords): Int =
     (row - that.row) match {
       case 0 => pos - that.pos
       case x => x

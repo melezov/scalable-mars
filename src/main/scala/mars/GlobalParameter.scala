@@ -13,9 +13,9 @@ final case class OxygenTrack private(current: Int) extends GlobalParameter[Oxyge
       case no if no > OxygenTrack.Steps.last =>
         IO.fail(ActionError.OceansMaxed)
       case no @ OxygenTrack.TemperatureSynergy =>
-        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformingRating, ActionBonus.BonusTemperature))
+        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusTemperature))
       case no =>
-        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformingRating))
+        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformRating))
     }
 }
 object OxygenTrack {
@@ -30,11 +30,11 @@ final case class TemperatureTrack private(current: Int) extends GlobalParameter[
       case nt if nt > TemperatureTrack.Steps.last =>
         IO.fail(ActionError.TemperatureMaxed)
       case nt @ TemperatureTrack.OceanSynergy =>
-        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformingRating, ActionBonus.BonusOcean))
+        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusOcean))
       case nt if TemperatureTrack.HeatProductionSynergy(nt) =>
-        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformingRating, ActionBonus.BonusHeatProduction))
+        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusHeatProduction))
       case nt =>
-        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformingRating))
+        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformRating))
     }
 }
 object TemperatureTrack {
@@ -50,7 +50,7 @@ final case class OceanTrack private(current: Int) extends GlobalParameter[OceanT
       case no if no > OceanTrack.Steps.last =>
         IO.fail(ActionError.OceansMaxed)
       case no =>
-        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformingRating))
+        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformRating))
     }
 }
 object OceanTrack {
@@ -59,10 +59,10 @@ object OceanTrack {
 }
 
 final case class GlobalParameters private(
-    oxygen: OxygenTrack,
-    temperature: TemperatureTrack,
-    oceans: OceanTrack,
-  ) {
+  oxygen: OxygenTrack,
+  temperature: TemperatureTrack,
+  oceans: OceanTrack,
+) {
   def apply(action: UIO[Action]): IO[ActionError, (GlobalParameters, Seq[ActionBonus])] =
     action flatMap {
       case Action.IncreaseOxygen =>
@@ -73,7 +73,7 @@ final case class GlobalParameters private(
         temperature.advance() map { case (tt, sab) =>
           (copy(temperature = tt), sab)
         }
-      case Action.PlaceOcean(tile) =>
+      case Action.PlaceOcean(_) =>
         oceans.advance() map { case (ot, sab) =>
           (copy(oceans = ot), sab)
         }

@@ -1,7 +1,5 @@
 package mars
 
-import scala.io.Source
-
 enum TileType {
   case Land
   case Ocean
@@ -16,10 +14,9 @@ enum TilePlacementBonus {
 }
 
 final case class Tile(
-    coords: TileCoords,
-    `type`: TileType,
-    placementBonuses: Seq[TilePlacementBonus],
-  ) extends Ordered[Tile] {
-
+  coords: TileCoords,
+  `type`: TileType,
+  placementBonuses: Seq[TilePlacementBonus],
+) extends Ordered[Tile] {
   override def compare(that: Tile): Int = coords compare that.coords
 }
