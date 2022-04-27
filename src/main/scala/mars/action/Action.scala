@@ -1,4 +1,5 @@
 package mars
+package action
 
 import zio.*
 
@@ -9,15 +10,9 @@ enum ActionBonus {
   case BonusTemperature
 }
 
-enum ActionError {
-  case OxygenMaxed
-  case TemperatureMaxed
-  case OceansMaxed
-}
-
 sealed trait Action extends Product with Serializable
 object Action {
-  final case class PlaceOcean(coords: TileCoords) extends Action
+  final case class PlaceOcean(rowPos: RowPos) extends Action
   case object IncreaseTemperature extends Action
   case object IncreaseOxygen extends Action
 }

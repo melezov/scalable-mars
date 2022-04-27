@@ -1,88 +1,109 @@
 package mars
 
+import mars.GlobalParameter.*
 import zio.*
 
-sealed abstract class GlobalParameter[T] {
+sealed abstract class GlobalParameter[T](steps: Range) {
+  protected final def step: Int = steps.step
+  protected def next: Int = current + step
+  final def isMaxed: Boolean = current == steps.last
+
   def current: Int
-  def advance(): IO[ActionError, (T, Seq[ActionBonus])]
+  def advance(): IO[GlobalParameter.Error, (T, Seq[ActionBonus])]
 }
+object GlobalParameter {
+  sealed trait Error extends MarsError
 
-final case class OxygenTrack private(current: Int) extends GlobalParameter[OxygenTrack] {
-  override def advance(): IO[ActionError, (OxygenTrack, Seq[ActionBonus])] =
-    (current + OxygenTrack.Steps.step) match {
-      case no if no > OxygenTrack.Steps.last =>
-        IO.fail(ActionError.OceansMaxed)
-      case no @ OxygenTrack.TemperatureSynergy =>
-        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusTemperature))
-      case no =>
-        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformRating))
-    }
-}
-object OxygenTrack {
-  private val Steps: Range = 0 to 13 by 1
-  private val TemperatureSynergy = 8
-  val Start: OxygenTrack = OxygenTrack(Steps.head)
-}
+  final class OxygenTrack private(override val current: Int)
+      extends GlobalParameter[OxygenTrack](OxygenTrack.Steps) {
+    override def advance(): IO[OxygenTrack.OxygenMaxed.type, (OxygenTrack, Seq[ActionBonus])] =
+      next match {
+        case _ if isMaxed =>
+          IO.fail(OxygenTrack.OxygenMaxed)
+        case no @ OxygenTrack.TemperatureSynergy =>
+          IO.succeed(OxygenTrack(no), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusTemperature))
+        case no =>
+          IO.succeed(OxygenTrack(no), Seq(ActionBonus.IncreaseTerraformRating))
+      }
+  }
+  object OxygenTrack {
+    case object OxygenMaxed extends GlobalParameter.Error
+    private val Steps: Range = 0 to 13 by 1
+    private val TemperatureSynergy = 8
+    val Start: OxygenTrack = OxygenTrack(Steps.head)
+  }
 
-final case class TemperatureTrack private(current: Int) extends GlobalParameter[TemperatureTrack] {
-  override def advance(): IO[ActionError, (TemperatureTrack, Seq[ActionBonus])] =
-    (current + TemperatureTrack.Steps.step) match {
-      case nt if nt > TemperatureTrack.Steps.last =>
-        IO.fail(ActionError.TemperatureMaxed)
-      case nt @ TemperatureTrack.OceanSynergy =>
-        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusOcean))
-      case nt if TemperatureTrack.HeatProductionSynergy(nt) =>
-        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusHeatProduction))
-      case nt =>
-        IO.succeed(copy(current = nt), Seq(ActionBonus.IncreaseTerraformRating))
-    }
-}
-object TemperatureTrack {
-  private val Steps: Range = -30 to 8 by 2
-  private val OceanSynergy = 0
-  private val HeatProductionSynergy = Set(-24, -20)
-  val Start: TemperatureTrack = TemperatureTrack(Steps.head)
-}
+  final class TemperatureTrack private(override val current: Int)
+      extends GlobalParameter[TemperatureTrack](TemperatureTrack.Steps) {
+    override def advance(): IO[TemperatureTrack.TemperatureMaxed.type, (TemperatureTrack, Seq[ActionBonus])] =
+      next match {
+        case _ if isMaxed =>
+          IO.fail(TemperatureTrack.TemperatureMaxed)
+        case nt @ TemperatureTrack.OceanSynergy =>
+          IO.succeed(TemperatureTrack(nt), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusOcean))
+        case nt if TemperatureTrack.HeatProductionSynergy(nt) =>
+          IO.succeed(TemperatureTrack(nt), Seq(ActionBonus.IncreaseTerraformRating, ActionBonus.BonusHeatProduction))
+        case nt =>
+          IO.succeed(TemperatureTrack(nt), Seq(ActionBonus.IncreaseTerraformRating))
+      }
+  }
+  object TemperatureTrack {
+    case object TemperatureMaxed extends GlobalParameter.Error
+    private val Steps: Range = -30 to 8 by 2
+    private val OceanSynergy = 0
+    private val HeatProductionSynergy = Set(-24, -20)
+    val Start: TemperatureTrack = TemperatureTrack(Steps.head)
+  }
 
-final case class OceanTrack private(current: Int) extends GlobalParameter[OceanTrack] {
-  override def advance(): IO[ActionError, (OceanTrack, Seq[ActionBonus])] =
-    (current + OceanTrack.Steps.step) match {
-      case no if no > OceanTrack.Steps.last =>
-        IO.fail(ActionError.OceansMaxed)
-      case no =>
-        IO.succeed(copy(current = no), Seq(ActionBonus.IncreaseTerraformRating))
-    }
+  final class OceanTiles private(override val current: Int)
+      extends GlobalParameter[OceanTiles](OceanTiles.Steps) {
+    override def advance(): IO[OceanTiles.OceansMaxed.type, (OceanTiles, Seq[ActionBonus])] =
+      next match {
+        case _ if isMaxed =>
+          IO.fail(OceanTiles.OceansMaxed)
+        case no =>
+          IO.succeed(OceanTiles(no), Seq(ActionBonus.IncreaseTerraformRating))
+      }
+  }
+  object OceanTiles {
+    case object OceansMaxed extends GlobalParameter.Error
+    private val Steps: Range = 0 to 9 by 1
+    val Start: OceanTiles = OceanTiles(Steps.head)
+  }
 }
-object OceanTrack {
-  private val Steps: Range = 0 to 9 by 1
-  val Start: OceanTrack = OceanTrack(Steps.head)
-}
-
-final case class GlobalParameters private(
-  oxygen: OxygenTrack,
-  temperature: TemperatureTrack,
-  oceans: OceanTrack,
+final class GlobalParameters private(
+  val oxygen: OxygenTrack,
+  val temperature: TemperatureTrack,
+  val oceans: OceanTiles,
 ) {
-  def apply(action: UIO[Action]): IO[ActionError, (GlobalParameters, Seq[ActionBonus])] =
-    action flatMap {
+  private[this] def copy(
+    oxygen: OxygenTrack = this.oxygen,
+    temperature: TemperatureTrack = this.temperature,
+    oceans: OceanTiles = this.oceans,
+  ): GlobalParameters = GlobalParameters(oxygen, temperature, oceans)
+
+  def apply(action: Action): IO[GlobalParameter.Error, (GlobalParameters, Seq[ActionBonus])] =
+    action match {
       case Action.IncreaseOxygen =>
-        oxygen.advance() map { case (ot, sab) =>
-          (copy(oxygen = ot), sab)
+        oxygen.advance() map { case (newOxygen, sab) =>
+          (copy(oxygen = newOxygen), sab)
         }
       case Action.IncreaseTemperature =>
-        temperature.advance() map { case (tt, sab) =>
-          (copy(temperature = tt), sab)
+        temperature.advance() map { case (newTemperature, sab) =>
+          (copy(temperature = newTemperature), sab)
         }
       case Action.PlaceOcean(_) =>
-        oceans.advance() map { case (ot, sab) =>
-          (copy(oceans = ot), sab)
+        oceans.advance() map { case (newOceans, sab) =>
+          (copy(oceans = newOceans), sab)
         }
     }
+
+  def areMaxed: Boolean = oxygen.isMaxed && temperature.isMaxed && oceans.isMaxed
 }
 object GlobalParameters {
   val Start: GlobalParameters = GlobalParameters(
     oxygen = OxygenTrack.Start,
     temperature = TemperatureTrack.Start,
-    oceans = OceanTrack.Start,
+    oceans = OceanTiles.Start,
   )
 }
