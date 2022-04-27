@@ -18,21 +18,18 @@ final class Board private(
   }
 
   private[this] lazy val uniqueTiles: Set[OwnedTile.Unique] =
-    tiles.values.flatMap(_.uniqueTile).toSet
+    (tiles.values flatMap { tile =>
+      tile.placedTile collect { case unique: OwnedTile.Unique => unique }
+    }).toSet
 
-  def placeTile(rowPos: RowPos, tile: PlacedTile): IO[Board.Error, Board] =
+  def placeTile(rowPos: RowPos, tile: PlacedTile): IO[MarsError, Board] =
     tile match {
       case uniqueTile: OwnedTile.Unique if uniqueTiles(uniqueTile) =>
         IO.fail(Board.Error.UniqueTileAlreadyPlaced)
       case _ =>
-        tiles(rowPos) match {
-          case boardTile if boardTile.isPlaced =>
-            IO.fail(Board.Error.TileRowPosAlreadyUsed)
-          case boardTile =>
-            boardTile.placeTile(tile) flatMap { placedTile =>
-              val updatedTiles = tiles.updated(rowPos, placedTile)
-              IO.succeed(copy(tiles = updatedTiles))
-            }
+        tiles(rowPos).placeTile(tile) flatMap { placedTile =>
+          val updatedTiles = tiles.updated(rowPos, placedTile)
+          IO.succeed(copy(tiles = updatedTiles))
         }
     }
 }
@@ -41,7 +38,6 @@ object Board {
   sealed trait Error extends MarsError
   object Error {
     case object UniqueTileAlreadyPlaced extends Error
-    case object TileRowPosAlreadyUsed extends Error
   }
 
   val Tharsis: Board = Board(

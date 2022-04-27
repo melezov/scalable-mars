@@ -19,18 +19,16 @@ sealed class Tile(
   def isPlaced: Boolean = placedTile.isDefined
   override def compare(that: Tile): Int = rowPos compare that.rowPos
 
-  def placeTile(placedTile: PlacedTile): IO[Board.Error.TileRowPosAlreadyUsed.type, Tile] =
+  def placeTile(placedTile: PlacedTile): IO[Tile.RowPosAlreadyPlaced.type, Tile] =
     this.placedTile match {
-      case Some(_) => IO.fail(Board.Error.TileRowPosAlreadyUsed)
+      case Some(_) => IO.fail(Tile.RowPosAlreadyPlaced)
       case _ => IO.succeed(copy(placedTile = Some(placedTile)))
     }
-
-  def uniqueTile: Option[OwnedTile.Unique] = placedTile collect {
-    case unique: OwnedTile.Unique => unique
-  }
 }
 
 object Tile {
+  case object RowPosAlreadyPlaced extends MarsError
+
   enum Kind {
     case Land
     case Ocean
