@@ -83,20 +83,19 @@ final class GlobalParameters private(
     oceans: OceanTiles = this.oceans,
   ): GlobalParameters = GlobalParameters(oxygen, temperature, oceans)
 
-  def apply(action: Action): IO[GlobalParameter.Error, (GlobalParameters, Seq[ActionBonus])] =
-    action match {
-      case Action.IncreaseOxygen =>
-        oxygen.advance() map { case (newOxygen, sab) =>
-          (copy(oxygen = newOxygen), sab)
-        }
-      case Action.IncreaseTemperature =>
-        temperature.advance() map { case (newTemperature, sab) =>
-          (copy(temperature = newTemperature), sab)
-        }
-      case Action.PlaceOcean(_) =>
-        oceans.advance() map { case (newOceans, sab) =>
-          (copy(oceans = newOceans), sab)
-        }
+  def increaseOxygen(): IO[GlobalParameter.Error, (GlobalParameters, Seq[ActionBonus])] =
+    oxygen.advance() map { case (newOxygen, sab) =>
+      (copy(oxygen = newOxygen), sab)
+    }
+
+  def increaseTemperature(): IO[GlobalParameter.Error, (GlobalParameters, Seq[ActionBonus])] =
+    temperature.advance() map { case (newTemperature, sab) =>
+      (copy(temperature = newTemperature), sab)
+    }
+
+  def placeOcean(): IO[GlobalParameter.Error, (GlobalParameters, Seq[ActionBonus])] =
+    oceans.advance() map { case (newOceans, sab) =>
+      (copy(oceans = newOceans), sab)
     }
 
   def areMaxed: Boolean = oxygen.isMaxed && temperature.isMaxed && oceans.isMaxed

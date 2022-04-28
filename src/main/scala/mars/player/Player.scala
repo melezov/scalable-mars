@@ -1,6 +1,8 @@
 package mars
 package player
 
+import mars.action.ForcedAction
+
 final class Player private(
   val color: Player.Color,
   val terraformRating: Int,
@@ -8,6 +10,7 @@ final class Player private(
   val tiles: SortedMap[RowPos, OwnedTile],
   val steelMultiplier: Int,
   val titaniumMultiplier: Int,
+  val forcedActions: Seq[ForcedAction],
 )
 
 object Player {

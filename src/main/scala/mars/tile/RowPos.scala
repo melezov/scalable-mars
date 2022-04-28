@@ -9,12 +9,10 @@ final class RowPos private(val row: Int, val pos: Int) extends Ordered[RowPos] w
     row * 100 + pos
 
   override def equals(that: Any): Boolean =
-    // TODO FIXME: this doesn't work in Scala 3, how to test reference equality?
-    // (this eq that) ||
-    that.isInstanceOf[RowPos] && {
-      val t = that.asInstanceOf[RowPos]
-      row == t.row && pos == t.pos
-    }
+     that match {
+       case t: RowPos => row == t.row && pos == t.pos
+       case _ => false
+     }
 
   override def compare(that: RowPos): Int =
     row - that.row match {
