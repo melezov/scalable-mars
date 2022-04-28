@@ -13,6 +13,9 @@ package object mars {
   type ActionBonus = mars.action.ActionBonus
   val ActionBonus: mars.action.ActionBonus.type = mars.action.ActionBonus
 
+  type Award = mars.board.Award
+  val Award: mars.board.Award.type = mars.board.Award
+
   type Player = mars.player.Player
   val Player: mars.player.Player.type = mars.player.Player
   type Mat = mars.player.Mat

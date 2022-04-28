@@ -1,6 +1,7 @@
 package mars
+package board
 
-import mars.GlobalParameter.*
+import mars.board.GlobalParameter.*
 import zio.*
 
 sealed abstract class GlobalParameter[T](steps: Range) {

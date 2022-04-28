@@ -1,4 +1,5 @@
 package mars
+package board
 
 import zio.*
 
