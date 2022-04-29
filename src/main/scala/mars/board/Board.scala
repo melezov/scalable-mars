@@ -12,7 +12,11 @@ final class Board private(
     globalParameters: GlobalParameters = this.globalParameters,
     tiles: Map[RowPos, Tile] = this.tiles,
     generationMarker: Int = this.generationMarker,
-  ): Board = Board(globalParameters, tiles, generationMarker)
+  ): Board = Board(
+    globalParameters = globalParameters,
+    tiles = tiles,
+    generationMarker = generationMarker,
+  )
 
   def nextGeneration(): Board = {
     copy(generationMarker = generationMarker + 1)
@@ -23,7 +27,7 @@ final class Board private(
       tile.placedTile collect { case unique: OwnedTile.Unique => unique }
     }).toSet
 
-  private def placeTile(rowPos: RowPos, tile: PlacedTile): IO[MarsError, Board] =
+  private[this] def placeTile(rowPos: RowPos, tile: PlacedTile): IO[MarsError, Board] =
     tile match {
       case uniqueTile: OwnedTile.Unique if uniqueTiles(uniqueTile) =>
         IO.fail(Board.Error.UniqueTileAlreadyPlaced)
@@ -34,16 +38,16 @@ final class Board private(
         }
     }
 
-  def processAction(action: Action):IO[MarsError, (Board, Seq[ActionBonus])] = action match {
+  def processAction(action: Action): IO[MarsError, (Board, Seq[ActionBonus])] = action match {
     case Action.PlaceGreenery(rowPos) =>
-      placeTile(rowPos, OwnedTile.Generic.Greenery) flatMap  { boardWithPlacement =>
+      placeTile(rowPos, OwnedTile.Generic.Greenery) flatMap { boardWithPlacement =>
         boardWithPlacement.globalParameters.increaseOxygen()
           .orElse(IO.succeed((boardWithPlacement.globalParameters, Nil)))
           .map { case (gp, bonuses) => (boardWithPlacement.copy(globalParameters = gp), bonuses) }
       }
 
     case Action.PlaceOcean(rowPos) =>
-      placeTile(rowPos, UnownedTile.Ocean) flatMap  { boardWithPlacement =>
+      placeTile(rowPos, UnownedTile.Ocean) flatMap { boardWithPlacement =>
         boardWithPlacement.globalParameters.placeOcean()
           .orElse(IO.succeed((boardWithPlacement.globalParameters, Nil)))
           .map { case (gp, bonuses) => (boardWithPlacement.copy(globalParameters = gp), bonuses) }
@@ -54,7 +58,6 @@ final class Board private(
         .orElse(IO.succeed((globalParameters, Nil)))
         .map { case (gp, bonuses) => (copy(globalParameters = gp), bonuses) }
   }
-
 }
 
 object Board {

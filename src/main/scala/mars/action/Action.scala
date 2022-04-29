@@ -15,7 +15,7 @@ object Action {
   final case class PlaceOcean(rowPos: RowPos) extends Action
   case object IncreaseTemperature extends Action
   final case class PlaceGreenery(rowPos: RowPos) extends Action
-//  final case class PlaceCity(rowPos: RowPos) extends Action
+  final case class PlaceCity(rowPos: RowPos) extends Action
 }
 
 sealed abstract class ForcedAction(val canPass: Boolean) extends Action

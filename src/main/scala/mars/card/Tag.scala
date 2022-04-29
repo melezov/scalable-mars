@@ -1,4 +1,5 @@
 package mars
+package card
 
 enum Tag {
   case Animal

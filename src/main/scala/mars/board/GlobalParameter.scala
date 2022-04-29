@@ -78,10 +78,14 @@ final class GlobalParameters private(
   val oceans: OceanTiles,
 ) {
   private[this] def copy(
-    oxygen: OxygenTrack = this.oxygen,
-    temperature: TemperatureTrack = this.temperature,
-    oceans: OceanTiles = this.oceans,
-  ): GlobalParameters = GlobalParameters(oxygen, temperature, oceans)
+    oxygen: OxygenTrack = oxygen,
+    temperature: TemperatureTrack = temperature,
+    oceans: OceanTiles = oceans,
+  ): GlobalParameters = GlobalParameters(
+    oxygen = oxygen,
+    temperature = temperature,
+    oceans = oceans,
+  )
 
   def increaseOxygen(): IO[GlobalParameter.Error, (GlobalParameters, Seq[ActionBonus])] =
     oxygen.advance() map { case (newOxygen, sab) =>
