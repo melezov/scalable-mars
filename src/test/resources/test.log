@@ -1,0 +1,11 @@
+[System] Game seed: 0x5ca1ab1e
+[System] Add player: Green
+[System] Add player: Blue
+[System] Enter prelude
+  [Blue] Corporation: Beginner Corporation
+ [Green] Corporation: Beginner Corporation
+[System] Start game
+  [Blue] Place ocean (2, 6)
+  [Blue] Pass
+ [Green] Place city (2, 2)
+  [Blue] Place greenery (2, 2)

@@ -18,7 +18,7 @@ trait BoardParser {
 }
 
 object BoardParser extends BoardParser {
-  private[this] final val TharsisBoardResource = "tharsis.txt"
+  private[this] final val TharsisBoardResource = "mars/board/tharsis.txt"
 
   val Tharsis: SortedSet[Tile] = {
     SortedSet.empty ++ parse(TharsisBoardResource) { case (rp, tile) =>

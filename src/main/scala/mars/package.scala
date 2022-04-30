@@ -1,6 +1,8 @@
 import zio.*
 
-package object mars {
+package object mars extends mars.resource.ResourceConversions {
+  type ListMap[K, +V] = scala.collection.immutable.ListMap[K, V]
+  val ListMap: scala.collection.immutable.ListMap.type = scala.collection.immutable.ListMap
   type SortedMap[K, +V] = scala.collection.immutable.SortedMap[K, V]
   val SortedMap: scala.collection.immutable.SortedMap.type = scala.collection.immutable.SortedMap
   type SortedSet[T] = scala.collection.immutable.SortedSet[T]
@@ -20,6 +22,9 @@ package object mars {
   type Milestone = mars.board.Milestone
   val Milestone: mars.board.Milestone.type = mars.board.Milestone
 
+  type Corporation = mars.corporation.Corporation
+  val Corporation: mars.corporation.Corporation.type = mars.corporation.Corporation
+
   type Tag = mars.card.Tag
   val Tag: mars.card.Tag.type = mars.card.Tag
   type ProjectType = mars.card.ProjectType
@@ -29,11 +34,17 @@ package object mars {
 
   type Game = mars.game.Game
   val Game: mars.game.Game.type = mars.game.Game
+  type Seed = mars.game.Seed
+  val Seed: mars.game.Seed.type = mars.game.Seed
 
   type Player = mars.player.Player
   val Player: mars.player.Player.type = mars.player.Player
   type Mat = mars.player.Mat
   val Mat: mars.player.Mat.type = mars.player.Mat
+
+  type Resource = mars.resource.Resource
+  val Resource: mars.resource.Resource.type = mars.resource.Resource
+  type Resources = mars.resource.Resources
 
   type Adjacency = mars.tile.Adjacency
   val Adjacency: mars.tile.Adjacency.type = mars.tile.Adjacency
