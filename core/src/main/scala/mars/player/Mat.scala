@@ -1,8 +1,6 @@
 package mars
 package player
 
-import zio.*
-
 final class Mat private(
   val megaCredits: Int = 0,
   val megaCreditProduction: Int = 0,
@@ -52,13 +50,13 @@ final class Mat private(
     plants: Int = 0,
     energy: Int = 0,
     heat: Int = 0,
-  ): IO[Mat.Error.InsufficientResources.type, Mat] =
+  ): IO[Mat.Err.InsufficientResources.type, Mat] =
     if (this.megaCredits < megaCredits ||
         this.steel < steel ||
         this.titanium < titanium ||
         this.plants < plants ||
         this.energy < energy ||
-        this.heat < heat) { IO.fail(Mat.Error.InsufficientResources) } else {
+        this.heat < heat) { IO.fail(Mat.Err.InsufficientResources) } else {
       IO.succeed(offset(
         deltaMegaCredits = -megaCredits,
         deltaSteel = -steel,
@@ -76,13 +74,13 @@ final class Mat private(
     plantProduction: Int = 0,
     energyProduction: Int = 0,
     heatProduction: Int = 0,
-  ): IO[Mat.Error.InsufficientProduction.type, Mat] =
+  ): IO[Mat.Err.InsufficientProduction.type, Mat] =
     if (this.megaCreditProduction - megaCreditProduction < Mat.MinimumMegaCreditProduction ||
         this.steelProduction - steelProduction < Mat.MinimumSteelProduction ||
         this.titaniumProduction - titaniumProduction < Mat.MinimumTitaniumProduction ||
         this.plantProduction - plantProduction < Mat.MinimumPlantProduction ||
         this.energyProduction - energyProduction < Mat.MinimumEnergyProduction ||
-        this.heatProduction - heatProduction < Mat.MinimumHeatProduction) { IO.fail(Mat.Error.InsufficientProduction) } else {
+        this.heatProduction - heatProduction < Mat.MinimumHeatProduction) { IO.fail(Mat.Err.InsufficientProduction) } else {
       IO.succeed(offset(
         deltaMegaCreditProduction = -megaCreditProduction,
         deltaSteelProduction = -steelProduction,
@@ -104,10 +102,10 @@ final class Mat private(
 }
 
 object Mat {
-  sealed trait Error extends MarsError
-  object Error {
-    case object InsufficientResources extends Error
-    case object InsufficientProduction extends Error
+  sealed trait Err extends MarsErr
+  object Err {
+    case object InsufficientResources extends Err
+    case object InsufficientProduction extends Err
   }
 
   val MinimumMegaCreditProduction: Int = -5

@@ -1,115 +1,148 @@
 package mars
 package game
 
-import mars.game.Game.*
-import zio.*
-
-import java.util.UUID
-
 final class Game(
   val seed: Seed,
   val board: Board,
   val players: IndexedSeq[Player],
-  val unlockedPlayers: IndexedSeq[Player.Color],
-  val lifeCycle: LifeCycle,
+  val turnOrder: TurnOrder,
+  val gameStage: GameStage,
 ) {
   private[this] def copy(
     seed: Seed = seed,
     board: Board = board,
     players: IndexedSeq[Player] = players,
-    unlockedPlayers: IndexedSeq[Player.Color] = unlockedPlayers,
-    lifeCycle: LifeCycle = lifeCycle,
+    turnOrder: TurnOrder = turnOrder,
+    gameStage: GameStage = gameStage,
   ): Game = Game(
     seed = seed,
     board = board,
     players = players,
-    unlockedPlayers = unlockedPlayers,
-    lifeCycle = lifeCycle,
+    turnOrder = turnOrder,
+    gameStage = gameStage,
   )
 
-  private[this] def inSetup(f: => IO[Error, Game]): IO[Error, Game] =
-    if (lifeCycle != LifeCycle.Setup) {
-      IO.fail(Error.RequiresGameToBeInSetupPhase)
+  private[this] def addPlayers(colors: Set[Color]): IO[MarsErr, Game] =
+    gameStage.ifInStage(GameStage.Setup) {
+      val shuffledColors = seed.shuffleColors(colors)
+      val players = shuffledColors map Player.create
+      IO.succeed(copy(
+        players = players,
+        gameStage = GameStage.Prelude,
+      ))
+    }
+
+  private[this] def gameStartCheck(): Game =
+    if (players.forall(_.corporation.isDefined)) {
+      copy(gameStage = GameStage.Terraforming)
     } else {
-      f
+      this
     }
 
-  private[this] def addPlayer(color: Player.Color): IO[Error, Game] =
-    inSetup {
-      players.find(_.color == color) match {
-        case Some(_) =>
-          IO.fail(Error.PlayerColorAlreadyTaken)
-        case _ =>
-          IO.succeed(copy(players = players :+ Player.create(color)))
-      }
-    }
-
-  private[this] def inPrelude(f: => IO[Error, Game]): IO[Error, Game] =
-    if (lifeCycle != LifeCycle.Prelude) {
-      IO.fail(Error.RequiresGameToBeInPreludePhase)
-    } else {
-      f
-    }
-
-  private[this] def enterPrelude(): IO[Error, Game] =
-    inSetup {
-      if (players.isEmpty) {
-        IO.fail(Error.NoPlayersAdded)
-      } else {
-        UIO(copy(lifeCycle = LifeCycle.Prelude))
-      }
-    }
-
-  private[this] def chooseCorporation(color: Player.Color, corporation: Corporation): IO[Error, Game] =
-    inPrelude {
+  private[this] def chooseCorporation(color: Color, corporation: Corporation, cards: Seq[String]): IO[MarsErr, Game] =
+    gameStage.ifInStage(GameStage.Prelude) {
       players.zipWithIndex.find(_._1.color == color) match {
         case Some((player, index)) =>
-          val corpPlayer = player.chooseCorporation(corporation)
-          val corpPlayers = players.updated(index, corpPlayer)
-          IO.succeed(copy(players = corpPlayers))
+          if (player.corporation.isEmpty) {
+            val corpPlayer = player.chooseCorporation(corporation, cards)
+            val updatedPlayers = players.updated(index, corpPlayer)
+            IO.succeed(copy(players = updatedPlayers).gameStartCheck())
+          } else {
+            IO.fail(Game.Err.PlayerAlreadySelectedCorporation)
+          }
         case _ =>
-          IO.fail(Error.PlayerWithColorDoesNotExist(color))
+          IO.fail(Game.Err.PlayerWithColorDoesNotExist)
       }
     }
 
-  private[this] def startGame(): IO[Error, Game] =
-    inPrelude {
-      if (players.isEmpty) {
-        IO.fail(Error.NoPlayersAdded)
-      } else {
-        UIO(copy(lifeCycle = LifeCycle.Prelude))
-      }
-    }
+//  private[this] def nextGen(): Game = {
+//    val (previouslyFirst, other) = players.map(_.nextGen()).splitAt(1)
+//    val newFirst = other.updated(0, other.head.activate())
+//    copy(
+//      board = board.nextGeneration(),
+//      players = newFirst :+ previouslyFirst,
+//    )
+//  }
 
-  def processAction(action: Action): IO[MarsError, Game] = action match {
-    case Action.AddPlayer(color) =>
-      addPlayer(color)
-    case Action.EnterPrelude =>
-      enterPrelude()
-    case Action.ChooseCorporation(color, corporation) =>
-      chooseCorporation(color, corporation)
-    case Action.StartGame =>
-      UIO(copy(lifeCycle = LifeCycle.Started))
+//  private[this] def endOfActionCalc(color: Color): Game =
+//    if (players.forall(_.passed)) {
+//      nextGen()
+//    } else {
+//      reduceActions(color)
+//    }
+//
+//  private[this] def reduceActions(color: Color): Game = {
+//    val player = players.find(_.color == color)
+//      .getOrElse(sys.error("Should not happen - could not find current player"))
+//
+//    val reducedActionOnThisPlayer =
+//      if (player.actionsRemaining == 1) {
+//        activePlayers.take(index) ++ activePlayers.drop(index).tail
+//      } else {
+//        activePlayers.updated(index, (color, remainingActionsBeforeThis - 1))
+//      }
+////
+////    val resetActionsOnEndOfTurn =
+////      if (reducedActionOnThisPlayer.isEmpty) {
+////        // end of turn, 1st player again has actions
+////        IndexedSeq((players.head.color, Game.ActionsPerTurn))
+////      } else {
+////        reducedActionOnThisPlayer
+////      }
+////
+////    copy(activePlayers = resetActionsOnEndOfTurn)
+//  }
+//
+//  private[this] def withPlayer(color: Color)(f: Player => IO[Err, Game]): IO[Err, Game] =
+//    if (gameStage != GameStage.Started) {
+//      IO.fail(Err.RequiresGameToBeInStartedPhase)
+//    } else {
+//      players.find(_.color == color) match {
+//        case Some(player) =>
+//          if (activePlayers.contains(color)) {
+//            f(player) map { _.endOfActionCalc(color) }
+//          } else {
+//            IO.fail(Err.PlayerIsNotAnActivePlayer)
+//          }
+//        case _ =>
+//          IO.fail(Err.PlayerWithColorDoesNotExist)
+//      }
+//    }
+//
+//  def pass(color: Color): IO[Err, Game] =
+//    withPlayer(color) { player =>
+//      player.pass
+//    }
+
+  def processAction(action: Action): IO[MarsErr, Game] = action match {
+    case t: TurnOrderAction =>
+      turnOrder.processAction(t) map { to =>
+        copy(turnOrder = to)
+      }
+    case Action.AddPlayers(colors) =>
+      addPlayers(colors)
+    case PlayerAction.ChooseCorporation(color, corporation, cards) =>
+      chooseCorporation(color, corporation, cards)
     case _ =>
       ???
   }
 }
+
 object Game {
-  sealed trait Error extends MarsError
-  object Error {
-    final case class PlayerWithColorDoesNotExist(color: Player.Color) extends Error
-    case object RequiresGameToBeInSetupPhase extends Error
-    case object RequiresGameToBeInPreludePhase extends Error
-    case object PlayerColorAlreadyTaken extends Error
-    case object NoPlayersAdded extends Error
-    final case class CannotPassThisForcedAction(forcedAction: ForcedAction) extends Error
+  sealed trait Err extends MarsErr
+  object Err {
+    case object PlayerWithColorDoesNotExist extends Err
+    case object PlayerAlreadySelectedCorporation extends Err
+//    case object PlayerColorAlreadyTaken extends Err
+//    case object NoPlayersAdded extends Err
+//    case object PlayerIsNotAnActivePlayer extends Err
   }
 
   def create(seed: Seed): Game = Game(
     seed = seed,
     board = Board.Tharsis,
     players = IndexedSeq.empty,
-    unlockedPlayers = IndexedSeq.empty,
-    lifeCycle = LifeCycle.Prelude,
+    turnOrder = TurnOrder.Start,
+    gameStage = GameStage.Setup,
   )
 }

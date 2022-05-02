@@ -2,7 +2,6 @@ package mars
 package tile
 
 import mars.tile.RowPos.*
-import zio.*
 
 final class RowPos private(val row: Int, val pos: Int) extends Ordered[RowPos] with Serializable {
   override val hashCode: Int =
@@ -33,7 +32,10 @@ final class RowPos private(val row: Int, val pos: Int) extends Ordered[RowPos] w
 }
 
 object RowPos extends BoardParser {
-  case class Error(row: Int, pos: Int) extends MarsError
+  sealed trait Err extends MarsErr
+  object Err {
+    case object RowPosErr extends Err
+  }
 
   // attempt at a flyweight pattern
   private[tile] val cache: Map[(Int, Int), RowPos] =
@@ -42,9 +44,9 @@ object RowPos extends BoardParser {
     }).toMap
 
   /** Main constructor for getting a RowPos */
-  def at(row: Int, pos: Int): IO[Error, RowPos] =
+  def at(row: Int, pos: Int): IO[Err, RowPos] =
     cache.get((row, pos)) match {
       case Some(trp) => IO.succeed(trp)
-      case _ => IO.fail(Error(row, pos))
+      case _ => IO.fail(Err.RowPosErr)
     }
 }

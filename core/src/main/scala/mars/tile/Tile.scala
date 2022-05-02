@@ -1,8 +1,6 @@
 package mars
 package tile
 
-import zio.*
-
 sealed class Tile(
   val rowPos: RowPos,
   val kind: Tile.Kind,
@@ -19,15 +17,18 @@ sealed class Tile(
   def isPlaced: Boolean = placedTile.isDefined
   override def compare(that: Tile): Int = rowPos compare that.rowPos
 
-  def placeTile(placedTile: PlacedTile): IO[Tile.RowPosAlreadyPlaced.type, Tile] =
+  def placeTile(placedTile: PlacedTile): IO[Tile.Err, Tile] =
     this.placedTile match {
-      case Some(_) => IO.fail(Tile.RowPosAlreadyPlaced)
+      case Some(_) => IO.fail(Tile.Err.RowPosAlreadyPlaced)
       case _ => IO.succeed(copy(placedTile = Some(placedTile)))
     }
 }
 
 object Tile {
-  case object RowPosAlreadyPlaced extends MarsError
+  sealed trait Err extends MarsErr
+  object Err {
+    case object RowPosAlreadyPlaced extends Err
+  }
 
   enum Kind {
     case Land

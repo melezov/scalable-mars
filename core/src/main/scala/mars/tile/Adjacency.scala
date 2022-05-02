@@ -1,9 +1,13 @@
 package mars
 package tile
 
-import zio.*
-
 enum Adjacency extends Ordered[Adjacency] {
-  case NE, NW, E, W, SE, SW
+  case NE
+  case NW
+  case E
+  case W
+  case SE
+  case SW
+
   override def compare(that: Adjacency): Int = ordinal - that.ordinal
 }

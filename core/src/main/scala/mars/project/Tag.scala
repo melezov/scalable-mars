@@ -1,5 +1,5 @@
 package mars
-package card
+package project
 
 enum Tag {
   case Animal
@@ -13,10 +13,4 @@ enum Tag {
   case Power
   case Science
   case Space
-}
-
-enum ProjectType {
-  case Active
-  case Automated
-  case Event
 }
