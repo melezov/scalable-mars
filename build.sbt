@@ -1,17 +1,17 @@
 organization := "learning-is-happening"
 name := "scalable-mars"
-version := "0.0.1-SNAPSHOT"
 
-scalaVersion := "3.1.2"
-val zioVersion = "1.0.14" // latest: "2.0.0-RC5"
+ThisBuild / version := "0.0.1-SNAPSHOT"
+ThisBuild / scalaVersion := "3.1.2"
 
-libraryDependencies ++= Seq(
-  "dev.zio" %% "zio" % zioVersion,
+val core = (project
+  settings(
+    scalaVersion := "3.1.2",
+    libraryDependencies ++= Seq(
+      "dev.zio"            %% "zio"           % "2.0.0-RC5",
+      "org.apache.commons" %  "commons-math3" % "3.6.1",
 
-  "org.apache.commons" % "commons-math3" % "3.6.1",
-
-  "dev.zio" %% "zio-test"     % zioVersion % Test,
-  "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2" % Test,
+    )
+  )
 )
-
-testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
