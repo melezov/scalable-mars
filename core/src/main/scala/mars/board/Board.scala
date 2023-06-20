@@ -14,13 +14,7 @@ final class Board private(
     milestones: Milestones = milestones,
     awards: Awards = awards,
     generationMarker: Int = generationMarker,
-  ): Board = Board(
-    globalParameters = globalParameters,
-    tiles = tiles,
-    milestones = milestones,
-    awards = awards,
-    generationMarker = generationMarker,
-  )
+  ): Board = Board(globalParameters, tiles, milestones, awards, generationMarker)
 
   def nextGeneration(): Board =
     copy(generationMarker = generationMarker + 1)
@@ -33,11 +27,11 @@ final class Board private(
   private[this] def placeTile(rowPos: RowPos, tile: PlacedTile): IO[MarsErr, Board] =
     tile match {
       case uniqueTile: OwnedTile.Unique if uniqueTiles(uniqueTile) =>
-        IO.fail(Board.Err.UniqueTileAlreadyPlaced)
+        ZIO.fail(Board.Err.UniqueTileAlreadyPlaced)
       case _ =>
         tiles(rowPos).placeTile(tile) flatMap { placedTile =>
           val updatedTiles = tiles.updated(rowPos, placedTile)
-          IO.succeed(copy(tiles = updatedTiles))
+          ZIO.succeed(copy(tiles = updatedTiles))
         }
     }
 
@@ -69,11 +63,11 @@ object Board {
     case object UniqueTileAlreadyPlaced extends Err
   }
 
-  val Tharsis: Board = Board(
-    globalParameters = GlobalParameters.Start,
-    tiles = (tile.BoardParser.Tharsis map { tile => tile.rowPos -> tile }).toMap,
-    milestones = Milestones.Start,
-    awards = Awards.Start,
-    generationMarker = 1,
-  )
+//  val Tharsis: Board = Board(
+//    globalParameters = GlobalParameters.start(false),
+//    tiles = (tile.BoardParser.Tharsis map { tile => tile.rowPos -> tile }).toMap,
+//    milestones = Milestones.Start,
+//    awards = Awards.Start,
+//    generationMarker = 1,
+//  )
 }

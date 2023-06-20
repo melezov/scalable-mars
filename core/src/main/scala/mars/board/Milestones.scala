@@ -8,23 +8,20 @@ final class Milestones private(
   private[this] def copy(
     milestones: IndexedSeq[Milestone] = milestones,
     claimed: ListMap[Milestone, Color] = claimed,
-  ): Milestones = Milestones(
-    milestones = milestones,
-    claimed = claimed,
-  )
+  ): Milestones = Milestones(milestones, claimed)
 
   def claim(color: Color, milestone: Milestone): IO[Milestones.Err, (Milestones, Int)] =
     Milestones.Costs.drop(claimed.size).headOption match {
       case Some(cost) =>
         if (claimed.isDefinedAt(milestone)) {
-          IO.fail(Milestones.Err.MilestoneAlreadyClaimed)
+          ZIO.fail(Milestones.Err.MilestoneAlreadyClaimed)
         } else if (!milestones.contains(milestone)) {
-          IO.fail(Milestones.Err.UnsupportedMilestone)
+          ZIO.fail(Milestones.Err.UnsupportedMilestone)
         } else {
-          IO.succeed(copy(claimed = claimed.updated(milestone, color)), cost)
+          ZIO.succeed(copy(claimed = claimed.updated(milestone, color)), cost)
         }
       case _ =>
-        IO.fail(Milestones.Err.AllMilestonesAlreadyClaimed)
+        ZIO.fail(Milestones.Err.AllMilestonesAlreadyClaimed)
     }
 }
 
@@ -37,8 +34,9 @@ object Milestones {
   }
 
   final val Costs = IndexedSeq(8, 8, 8)
-  val Start: Milestones = Milestones(
-    milestones = TharsisMilestone.values.toIndexedSeq,
-    claimed = ListMap.empty,
-  )
+
+//  val Start: Milestones = Milestones(
+//    milestones = TharsisMilestone.values.toIndexedSeq,
+//    claimed = ListMap.empty,
+//  )
 }

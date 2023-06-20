@@ -3,7 +3,8 @@ package action
 
 enum ActionBonus {
   case IncreaseTerraformRating
-  case BonusOcean
-  case BonusHeatProduction
-  case BonusTemperature
+  case DrawCard
+  case PlaceOcean
+  case IncreaseHeatProduction
+  case IncreaseTemperature
 }

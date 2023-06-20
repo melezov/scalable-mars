@@ -2,12 +2,12 @@ package mars
 package tile
 
 enum Adjacency extends Ordered[Adjacency] {
-  case NE
   case NW
-  case E
+  case NE
   case W
-  case SE
+  case E
   case SW
+  case SE
 
   override def compare(that: Adjacency): Int = ordinal - that.ordinal
 }

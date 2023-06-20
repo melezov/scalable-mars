@@ -19,8 +19,8 @@ sealed class Tile(
 
   def placeTile(placedTile: PlacedTile): IO[Tile.Err, Tile] =
     this.placedTile match {
-      case Some(_) => IO.fail(Tile.Err.RowPosAlreadyPlaced)
-      case _ => IO.succeed(copy(placedTile = Some(placedTile)))
+      case Some(_) => ZIO.fail(Tile.Err.RowPosAlreadyPlaced)
+      case _ => ZIO.succeed(copy(placedTile = Some(placedTile)))
     }
 }
 

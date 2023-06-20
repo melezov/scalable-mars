@@ -4,14 +4,14 @@ package action
 trait Action extends Product with Serializable
 /** System actions with no owner (player) */
 object Action {
-  case class AddPlayers(colors: Set[Color]) extends Action
-  case object IncreaseTemperature extends Action
+//  case class AddPlayers(colors: Set[Color]) extends Action
+//  case object IncreaseTemperature extends Action
 }
 
 /** Base for all actions performed by a player */
 trait PlayerAction extends Action { def color: Color }
 object PlayerAction {
-  final case class ChooseCorporation(color: Color, corporation: Corporation, cards: Seq[String]) extends PlayerAction
+//  final case class ChooseCorporation(color: Color, corporation: Corporation, cards: Seq[String]) extends PlayerAction
   final case class PlaceOcean(color: Color, rowPos: RowPos) extends PlayerAction
   final case class PlaceGreenery(color: Color, rowPos: RowPos) extends PlayerAction
   final case class PlaceCity(color: Color, rowPos: RowPos) extends PlayerAction

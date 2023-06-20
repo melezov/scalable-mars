@@ -8,23 +8,20 @@ final class Awards private(
   private[this] def copy(
     awards: IndexedSeq[Award] = awards,
     funded: ListMap[Award, Color] = funded,
-  ): Awards = Awards(
-    awards = awards,
-    funded = funded,
-  )
+  ): Awards = Awards(awards, funded)
 
   def fund(color: Color, award: Award): IO[Awards.Err, (Awards, Int)] =
     Awards.Costs.drop(funded.size).headOption match {
       case Some(cost) =>
         if (funded.isDefinedAt(award)) {
-          IO.fail(Awards.Err.AwardAlreadyFunded)
+          ZIO.fail(Awards.Err.AwardAlreadyFunded)
         } else if (!awards.contains(award)) {
-          IO.fail(Awards.Err.UnsupportedAward)
+          ZIO.fail(Awards.Err.UnsupportedAward)
         } else {
-          IO.succeed(copy(funded = funded.updated(award, color)), cost)
+          ZIO.succeed(copy(funded = funded.updated(award, color)), cost)
         }
       case _ =>
-        IO.fail(Awards.Err.AllAwardsAlreadyFunded)
+        ZIO.fail(Awards.Err.AllAwardsAlreadyFunded)
     }
 }
 
@@ -37,8 +34,10 @@ object Awards {
   }
 
   final val Costs = IndexedSeq(8, 8, 8)
+/*
   val Start: Awards = Awards(
     awards = TharsisAward.values.toIndexedSeq,
     funded = ListMap.empty,
   )
+*/
 }

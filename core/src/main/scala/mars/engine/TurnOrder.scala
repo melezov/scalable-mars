@@ -5,18 +5,21 @@ final class TurnOrder private(val players: ListMap[Color, TurnState]) {
   def processAction(action: TurnOrderAction): IO[TurnOrder.Err, TurnOrder] =
     players.get(action.color) match {
       case Some (ts) => process (action, ts)
-      case _ => IO.fail(TurnOrder.Err.InvalidPlayerColor)
+      case _ => ZIO.fail(TurnOrder.Err.InvalidPlayerColor)
     }
 
   private[this] def process(action: TurnOrderAction, ts: TurnState): IO[TurnOrder.Err, TurnOrder] = (action, ts) match {
-    case (TurnOrderAction.EndTurn(color), TurnState.Active(1, _)) => IO.fail(TurnOrder.Err.PlayerCannotEndTurnAsFirstAction)
-    case (TurnOrderAction.EndTurn(color), TurnState.Active(2, Nil)) => IO.succeed(TurnOrder(players.updated(color, TurnState.Waiting)))
-    case (TurnOrderAction.EndTurn(color), TurnState.Active(2, _)) => IO.fail(TurnOrder.Err.PlayerCannotEndTurnWithForcedActions)
+    case (TurnOrderAction.EndTurn(color), TurnState.Active(1, _)) => ZIO.fail(TurnOrder.Err.PlayerCannotEndTurnAsFirstAction)
+    case (TurnOrderAction.EndTurn(color), TurnState.Active(2, Nil)) => ZIO.succeed(TurnOrder(players.updated(color, TurnState.Waiting)))
+    case (TurnOrderAction.EndTurn(color), TurnState.Active(2, _)) => ZIO.fail(TurnOrder.Err.PlayerCannotEndTurnWithForcedActions)
 
-    case (TurnOrderAction.Pass(color), TurnState.Active(1, Nil)) => IO.succeed(TurnOrder(players.updated(color, TurnState.Passed)))
-    case (TurnOrderAction.Pass(color), TurnState.Active(1, _)) => IO.fail(TurnOrder.Err.PlayerCannotPassWithForcedActions)
-    case (TurnOrderAction.Pass(color), TurnState.Active(2, _)) => IO.fail(TurnOrder.Err.PlayerCannotPassAsSecondAction)
-    case (TurnOrderAction.Pass(color), TurnState.Passed) => IO.fail(TurnOrder.Err.PlayerAlreadyPassed)
+    case (TurnOrderAction.Pass(color), TurnState.Active(1, forcedActions)) =>
+      if (forcedActions.exists { case _: BonusAction => true; case _ => false }) {
+        ZIO.fail(TurnOrder.Err.PlayerCannotPassWithForcedBonusActions)
+      } else {
+        ZIO.succeed(TurnOrder(players.updated(color, TurnState.Passed)))
+      }
+    case (TurnOrderAction.Pass(color), TurnState.Active(2, _)) => ZIO.fail(TurnOrder.Err.PlayerCannotPassAsSecondAction)
 
     case (TurnOrderAction.ProposeNextPlayerActivation(color), TurnState.Active(_, _)) =>
       val before = players.takeWhile { case (otherColor, _) => otherColor != color }
@@ -24,20 +27,18 @@ final class TurnOrder private(val players: ListMap[Color, TurnState]) {
       val nonPassed = others filter { case (_, ts) => ts != TurnState.Passed }
       nonPassed.headOption match {
         case Some((_, TurnState.ProposedActivation)) =>
-          IO.fail(TurnOrder.Err.ProposedActivationAlreadySent)
+          ZIO.fail(TurnOrder.Err.ProposedActivationAlreadySent)
         case Some((otherColor, TurnState.Waiting)) =>
-          IO.succeed(TurnOrder(players.updated(otherColor, TurnState.ProposedActivation)))
+          ZIO.succeed(TurnOrder(players.updated(otherColor, TurnState.ProposedActivation)))
         case _ =>
-          IO.fail(TurnOrder.Err.NoTargetsForProposedActivation)
+          ZIO.fail(TurnOrder.Err.NoTargetsForProposedActivation)
       }
 
-    case (TurnOrderAction.AcceptActivation(color), TurnState.Active(_, _)) =>
-      IO.fail(TurnOrder.Err.PlayerAlreadyActive)
     case (TurnOrderAction.AcceptActivation(color), TurnState.ProposedActivation) =>
-      IO.succeed(TurnOrder(players.updated(color, TurnState.Active(1, Nil))))
+      ZIO.succeed(TurnOrder(players.updated(color, TurnState.Active(1, Nil))))
 
     case _ =>
-      IO.fail(TurnOrder.Err.InvalidPlayerState)
+      ZIO.fail(TurnOrder.Err.InvalidPlayerState)
   }
 }
 
@@ -51,7 +52,7 @@ object TurnOrder {
 
     case object PlayerAlreadyPassed extends Err
     case object PlayerCannotPassAsSecondAction extends Err
-    case object PlayerCannotPassWithForcedActions extends Err
+    case object PlayerCannotPassWithForcedBonusActions extends Err
 
     case object ProposedActivationAlreadySent extends Err
     case object NoTargetsForProposedActivation extends Err
